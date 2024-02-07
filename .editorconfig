@@ -1,0 +1,7 @@
+[*]
+end_of_line = "lf"
+charset = "utf-8"
+
+[*.{svelte,ts,cjs,js,json,yml}]
+indent_size = 2
+indent_style = space
