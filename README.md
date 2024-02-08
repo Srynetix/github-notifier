@@ -4,6 +4,12 @@
 
 Have a simple and efficient view of your GitHub notifications.
 
+**:rocket: Use it here: https://srynetix.github.io/github-notifier**
+
+## Preview
+
+![animation](./doc/animation.gif)
+
 ## Features
 
 - Filter closed issues and merged pull requests, mark them as read all at once,

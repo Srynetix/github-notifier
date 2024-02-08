@@ -1,9 +1,6 @@
-import { writable } from "svelte/store";
-
 import type { AppNotification } from "@/domain/AppNotification";
 import { makeUpdatedAppNotification } from "@/domain/extract";
 
-const NOTIFICATION_LAST_FETCH_NAME = "ghn-last-modified";
 const NOTIFICATION_CACHE_NAME = "ghn-notification-cache";
 
 const CACHE_VERSION = "1.0.0";
@@ -12,33 +9,6 @@ interface NotificationCacheStructure {
   version: string;
   notifications: Record<string, AppNotification>;
 }
-
-function createLastModifiedStore() {
-  const lastModified = readLastModifiedFromStorage();
-  const { subscribe, set } = writable(lastModified);
-
-  return {
-    subscribe,
-    set: (value: Date) => {
-      localStorage.setItem(NOTIFICATION_LAST_FETCH_NAME, value.toISOString());
-    },
-    reset: () => {
-      localStorage.removeItem(NOTIFICATION_LAST_FETCH_NAME);
-      set(null);
-    },
-  };
-}
-
-function readLastModifiedFromStorage(): Date | null {
-  const value = localStorage.getItem(NOTIFICATION_LAST_FETCH_NAME);
-  if (value == null) {
-    return null;
-  }
-
-  return new Date(value);
-}
-
-export const lastModified = createLastModifiedStore();
 
 function loadNotificationsFromCacheRaw(): NotificationCacheStructure {
   const value = localStorage.getItem(NOTIFICATION_CACHE_NAME);
@@ -110,20 +80,20 @@ export interface NotificationMergeResult {
 }
 
 export async function mergeUpstreamNotificationsWithCache(
+  cachedNotifications: AppNotification[],
   upstreamNotifications: AppNotification[],
   previousNewNotificationIds: string[],
 ): Promise<NotificationMergeResult> {
-  const cached = loadNotificationsFromCache();
   const output: Record<string, AppNotification> = {};
   const newNotificationIds = [];
   const upstreamNotificationIds = upstreamNotifications.map((n) => n.id);
 
-  for (const cache of cached) {
+  for (const cache of cachedNotifications) {
     // If cached notification is not in upstream, it has been seen
     if (!upstreamNotificationIds.includes(cache.id)) {
-      // Update
       const updated = await makeUpdatedAppNotification(cache);
       updated.unread = false;
+
       output[updated.id] = updated;
     } else {
       output[cache.id] = cache;
@@ -138,11 +108,17 @@ export async function mergeUpstreamNotificationsWithCache(
       newNotificationIds.push(upstream.id);
     }
 
-    output[upstream.id] = upstream;
+    if (upstream.id in output) {
+      output[upstream.id] = updateCachedNotification(
+        output[upstream.id],
+        upstream,
+      );
+    } else {
+      output[upstream.id] = upstream;
+    }
   }
 
   const newUpstreamNotificationIds = [...newNotificationIds];
-
   for (const notificationId of previousNewNotificationIds) {
     // Previous new notification was newly updated
     if (newNotificationIds.includes(notificationId)) {
@@ -174,4 +150,18 @@ export async function mergeUpstreamNotificationsWithCache(
     newUpstreamNotificationIds,
     notifications,
   };
+}
+
+function updateCachedNotification(
+  cachedNotification: AppNotification,
+  upstreamNotification: AppNotification,
+): AppNotification {
+  if (upstreamNotification.updatedAt <= cachedNotification.updatedAt) {
+    return {
+      ...upstreamNotification,
+      unread: cachedNotification.unread,
+    };
+  } else {
+    return upstreamNotification;
+  }
 }

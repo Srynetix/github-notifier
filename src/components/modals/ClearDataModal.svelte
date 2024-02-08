@@ -1,10 +1,7 @@
 <script lang="ts">
   import { theme } from "@/store/theme";
   import { token } from "@/store/token";
-  import {
-    lastModified,
-    clearNotificationsFromCache,
-  } from "@/store/notification";
+  import { clearNotificationsFromCache } from "@/store/notification";
   import { Modal } from "carbon-components-svelte";
 
   export let open = false;
@@ -19,7 +16,6 @@
   preventCloseOnClickOutside
   on:click:button--primary={() => {
     token.reset();
-    lastModified.reset();
     theme.reset();
     clearNotificationsFromCache();
     open = false;

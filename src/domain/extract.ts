@@ -105,6 +105,8 @@ export async function extractAppNotification(
         state: match[3],
         branch: match[4],
       };
+
+      common.url = `${ghNotification.repository.html_url}/actions?query=branch%3A${common.message.branch}`;
     }
   } else if (ghNotification.subject.type == "Release") {
     const components = ghNotification.subject.url.split("/");
@@ -161,6 +163,13 @@ export async function extractAppNotification(
 export async function makeUpdatedAppNotification(
   appNotification: AppNotification,
 ): Promise<AppNotification> {
+  const wasUnread = appNotification.unread;
+  const lastUpdated = appNotification.updatedAt;
   const upstreamGhNotification = await fetchNotification(appNotification.id);
+  if (new Date(upstreamGhNotification.updated_at) <= lastUpdated) {
+    // Update the read status, waiting for later update
+    upstreamGhNotification.unread = wasUnread;
+  }
+
   return await extractAppNotification(upstreamGhNotification);
 }
