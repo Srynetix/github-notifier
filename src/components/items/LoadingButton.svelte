@@ -12,6 +12,7 @@
 <Button
   icon={(loading && InlineLoading) || icon}
   disabled={loading || disabled}
+  on:click
   {...$$restProps}
 >
   <slot />

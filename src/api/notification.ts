@@ -1,6 +1,7 @@
 import type { GhNotification } from "@/domain/GhNotification";
 
 import { makeAuthenticatedGitHubCall } from "./base";
+import { LOAD_TEST_NOTIFICATIONS } from "@/env";
 
 const MAX_PAGES = 2;
 
@@ -11,6 +12,10 @@ export interface LoadNotificationsOptions {
 export async function markNotificationThreadAsRead(
   threadId: string,
 ): Promise<void> {
+  if (LOAD_TEST_NOTIFICATIONS) {
+    return;
+  }
+
   await makeAuthenticatedGitHubCall(`/notifications/threads/${threadId}`, {
     method: "PATCH",
   });
@@ -19,6 +24,11 @@ export async function markNotificationThreadAsRead(
 export async function fetchNotifications(
   options?: LoadNotificationsOptions,
 ): Promise<GhNotification[]> {
+  if (LOAD_TEST_NOTIFICATIONS) {
+    return (await import("../../tests/notifications.json"))
+      .default as GhNotification[];
+  }
+
   const page = options?.page ?? 1;
   const query = `?page=${page}`;
 

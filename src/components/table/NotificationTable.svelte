@@ -47,7 +47,7 @@
   let showHelpModal = false;
   let markingClosedItemsAsRead = false;
 
-  let pageSize = 10;
+  let pageSize = 8;
   let page = 1;
 
   $: closedItemCount = notifications.filter(

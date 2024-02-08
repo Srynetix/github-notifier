@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Content, Theme } from "carbon-components-svelte";
-  import { onDestroy } from "svelte";
+  import { onDestroy, onMount } from "svelte";
 
   import { fetchNotifications } from "./api/notification";
   import NotificationTable from "./components/table/NotificationTable.svelte";
@@ -13,6 +13,7 @@
   import type { AppNotification } from "./domain/AppNotification";
   import type { GhNotification } from "./domain/GhNotification";
   import {
+    clearNotificationsFromCache,
     loadNotificationsFromCache,
     mergeUpstreamNotificationsWithCache,
   } from "./store/notification";
@@ -20,6 +21,7 @@
   import { theme } from "./store/theme";
   import { showNotification } from "./domain/UserNotifications";
   import { appMessageToString } from "./domain/AppMessage";
+  import { CLEAN_NOTIFICATIONS_AT_STARTUP } from "./env";
 
   let loadedNotifications: AppNotification[] = [];
   let newNotificationIds: string[] = [];
@@ -50,16 +52,21 @@
         ),
       )
       .then(async (notifications) => {
-        // Rewrite the cache update method
+        const cachedNotifications = loadNotificationsFromCache();
 
         const result = await mergeUpstreamNotificationsWithCache(
+          cachedNotifications,
           notifications,
           newNotificationIds,
         );
 
         loadedNotifications = result.notifications;
         newNotificationIds = result.newNotificationIds;
-        showNewNotifications(result.newUpstreamNotificationIds);
+
+        /// Show notifications if something was already in cache
+        if (cachedNotifications.length > 0) {
+          showNewNotifications(result.newUpstreamNotificationIds);
+        }
 
         refreshing = false;
       });
@@ -102,6 +109,12 @@
 
     refreshNotifications();
   }
+
+  onMount(() => {
+    if (CLEAN_NOTIFICATIONS_AT_STARTUP) {
+      clearNotificationsFromCache();
+    }
+  });
 
   // Remove interval on destroy.
   onDestroy(() => {
