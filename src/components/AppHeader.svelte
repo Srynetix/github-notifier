@@ -22,7 +22,7 @@
   import { theme } from "@/store/theme";
 
   const PROJECT_URL = "https://github.com/Srynetix/github-notifier";
-  const APP_VERSION = "1.0.0";
+  const APP_VERSION = "1.0.1";
   const DARK_THEME = "g100" as CarbonTheme;
   const LIGHT_THEME = "g10" as CarbonTheme;
 

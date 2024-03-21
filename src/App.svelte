@@ -83,11 +83,18 @@
     const filtered = loadedNotifications.filter((n) =>
       notificationIds.includes(n.id),
     );
-    for (const notification of filtered) {
-      showNotification(
-        "You got a new GitHub notification!",
-        appMessageToString(notification.message),
-      );
+
+    const notificationTitle = "You got a new GitHub notification!";
+    const notificationCount = filtered.length;
+
+    if (notificationCount > 1) {
+      const message =
+        appMessageToString(filtered[0].message) +
+        `\nAnd ${notificationCount - 1} more notifications.`;
+      showNotification(notificationTitle, message);
+    } else if (notificationCount == 1) {
+      const message = appMessageToString(filtered[0].message);
+      showNotification(notificationTitle, message);
     }
   }
 
